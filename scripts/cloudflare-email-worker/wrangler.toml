@@ -1,0 +1,8 @@
+name = "cs-agent-email-inbound-worker"
+main = "src/index.ts"
+compatibility_date = "2024-11-05"
+# account_id = "<your-cloudflare-account-id>"
+
+[vars]
+DESK_WEBHOOK_URL = "https://your-desk.example.com/api/third/email/webhook"
+DESK_WEBHOOK_SECRET = "replace-with-your-email-inbound-secret"

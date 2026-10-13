@@ -1,0 +1,11 @@
+services:
+  cs-agent:
+    image: cs-agent:latest-lancedb
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./docker/cs-agent-sqlite-lancedb.yaml:/app/config/config.yaml:ro
+      - ./data:/app/data
+    environment:
+      TZ: Asia/Shanghai
