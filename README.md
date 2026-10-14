@@ -340,12 +340,3 @@ docker run --rm -p 8081:8081 \
 
 Compose 以 [docker/cs-agent.yaml](docker/cs-agent.yaml) 作为容器内配置，应用经由 Docker 内部服务名访问 `mysql` 与 `qdrant`。
 
-## 开源定位
-
-`客服Agent` 可作为以下方向的开源基础项目：
-
-- AI 客服系统
-- AI Helpdesk / AI Support Platform
-- RAG 可回答性判定 + Human Handoff 的落地样板
-- 面向企业场景的 AI Agent 应用框架
-
