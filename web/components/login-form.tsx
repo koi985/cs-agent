@@ -21,7 +21,15 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { KeyRoundIcon, Loader2Icon, TriangleAlertIcon } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { KeyRoundIcon, Loader2Icon, MessageSquareIcon, TriangleAlertIcon } from "lucide-react"
 
 function detectWxWorkEnvironment() {
   if (typeof navigator === "undefined") {
@@ -41,6 +49,7 @@ export function LoginForm({
   const { session, ready } = useAuth()
   const [isPending, setIsPending] = useState(false)
   const [isWxWorkEnv, setIsWxWorkEnv] = useState(false)
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false)
   const [publicConfig, setPublicConfig] = useState<PublicConfig | null>(null)
   const [publicConfigError, setPublicConfigError] = useState<string | null>(null)
   const nextPath = searchParams.get("next")
@@ -216,12 +225,13 @@ export function LoginForm({
                   <Field>
                     <div className="flex items-center">
                       <FieldLabel htmlFor="password">{t("auth.password")}</FieldLabel>
-                      <a
-                        href="#"
+                      <button
+                        type="button"
                         className="ml-auto text-sm underline-offset-2 hover:underline"
+                        onClick={() => setForgotPasswordOpen(true)}
                       >
                         {t("auth.forgotPassword")}
-                      </a>
+                      </button>
                     </div>
                     <Input
                       id="password"
@@ -290,9 +300,12 @@ export function LoginForm({
                   </Field>
                 </>
               ) : null}
-              {/* <FieldDescription className="text-center">
-                {t("auth.noAccount")} <a href="#">{t("auth.signUp")}</a>
-              </FieldDescription> */}
+              <FieldDescription className="text-center">
+                {t("auth.noAccount")}{" "}
+                <Link href="/support/login" className="underline-offset-2 hover:underline">
+                  {t("auth.toCustomerAuth")}
+                </Link>
+              </FieldDescription>
             </FieldGroup>
           </form>
           <div className="relative hidden bg-muted md:block">
@@ -300,12 +313,21 @@ export function LoginForm({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/login-illustration.svg"
-              alt={t("auth.imageAlt")}
+              alt="Lykke"
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
             />
           </div>
         </CardContent>
       </Card>
+      <div className="flex justify-center">
+        <Link
+          href="/support/demo"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          <MessageSquareIcon className="size-4" />
+          {t("auth.visitorChat")}
+        </Link>
+      </div>
       <FieldDescription className="px-6 text-center">
         {t("auth.termsPrefix")}{" "}
         <Link href="/legal/terms" target="_blank" rel="noreferrer">
@@ -317,6 +339,21 @@ export function LoginForm({
         </Link>
         .
       </FieldDescription>
+      <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+        <DialogContent className="max-w-[380px]">
+          <DialogHeader>
+            <DialogTitle>{t("auth.forgotPasswordDialogTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("auth.forgotPasswordDialogDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" onClick={() => setForgotPasswordOpen(false)}>
+              {t("common.close")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

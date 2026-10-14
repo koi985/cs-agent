@@ -1,10 +1,10 @@
 package utils
 
 import (
+	"crypto/rand"
 	"cs-agent/internal/models"
 	"cs-agent/internal/pkg/dto"
 	"cs-agent/internal/pkg/errorsx"
-	"crypto/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -65,6 +65,27 @@ func GenerateRandomPassword(length int) (string, error) {
 	}
 	for i := range buf {
 		buf[i] = charset[int(random[i])%len(charset)]
+	}
+	return string(buf), nil
+}
+
+// shortCodeCharset is lower-case alphanumeric with visually ambiguous
+// characters (0/o/1/l/i) removed so generated codes stay easy to read and type.
+const shortCodeCharset = "23456789abcdefghjkmnpqrstuvwxyz"
+
+// GenerateShortCode returns a cryptographically random, URL-safe short code.
+// It is used for public identifiers such as channel IDs.
+func GenerateShortCode(length int) (string, error) {
+	if length <= 0 {
+		return "", errorsx.InvalidParamI18n("error.e0175")
+	}
+	buf := make([]byte, length)
+	random := make([]byte, length)
+	if _, err := rand.Read(random); err != nil {
+		return "", err
+	}
+	for i := range buf {
+		buf[i] = shortCodeCharset[int(random[i])%len(shortCodeCharset)]
 	}
 	return string(buf), nil
 }

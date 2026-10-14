@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { SupportPageLayout } from "@/app/(support)/support/_components/support-page-layout"
 import { SupportSearchInput } from "@/app/(support)/support/_components/support-ui"
+import { SupportChatEntryButton } from "@/app/(support)/support/_components/support-chat-entry"
 import { useI18n } from "@/i18n/provider"
 import { postsHref } from "@/lib/api/support-community"
 import { cn } from "@/lib/utils"
@@ -41,6 +42,13 @@ export function SupportCenterHome() {
             >
               {t("supportPublic.actions.search")}
             </Link>
+          </div>
+          <div className="mt-4 flex justify-center">
+            <SupportChatEntryButton
+              size="lg"
+              variant="outline"
+              className="h-13 rounded-md px-6"
+            />
           </div>
         </div>
       </section>

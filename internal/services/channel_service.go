@@ -1,6 +1,7 @@
 package services
 
 import (
+	"crypto/rand"
 	"cs-agent/internal/models"
 	"cs-agent/internal/pkg/dto"
 	"cs-agent/internal/pkg/dto/request"
@@ -11,9 +12,9 @@ import (
 	"cs-agent/internal/pkg/utils"
 	"cs-agent/internal/repositories"
 	"cs-agent/internal/wxwork"
-	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -594,6 +595,17 @@ func generateUserTokenSecret() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(buf), nil
 }
 
+// generateShortChannelID returns a short, URL-safe public channel identifier.
+// It falls back to the legacy UUID form only if the random source fails.
+func generateShortChannelID() string {
+	code, err := utils.GenerateShortCode(8)
+	if err != nil {
+		slog.Error("failed to generate short channel id, falling back to uuid", "error", err)
+		return strs.UUID()
+	}
+	return code
+}
+
 func (s *channelService) GetEnabledWxWorkKFChannelByOpenKfID(openKfID string) *models.Channel {
 	openKfID = strings.TrimSpace(openKfID)
 	if openKfID == "" {
@@ -672,7 +684,7 @@ func (s *channelService) buildChannelModel(id int64, req request.CreateChannelRe
 	switch channelType {
 	case enums.ChannelTypeWeb:
 		if channelID == "" {
-			channelID = strs.UUID()
+			channelID = generateShortChannelID()
 		}
 		if exists := s.Take("channel_id = ? AND status <> ? AND id <> ?", channelID, enums.StatusDeleted, id); exists != nil {
 			return nil, errorsx.InvalidParamI18n("error.e0248")
@@ -695,7 +707,7 @@ func (s *channelService) buildChannelModel(id int64, req request.CreateChannelRe
 		configJSON = string(configBytes)
 	case enums.ChannelTypeWechatMP:
 		if channelID == "" {
-			channelID = strs.UUID()
+			channelID = generateShortChannelID()
 		}
 		if exists := s.Take("channel_id = ? AND status <> ? AND id <> ?", channelID, enums.StatusDeleted, id); exists != nil {
 			return nil, errorsx.InvalidParamI18n("error.e0248")
@@ -718,7 +730,7 @@ func (s *channelService) buildChannelModel(id int64, req request.CreateChannelRe
 		configJSON = string(configBytes)
 	case enums.ChannelTypeWxWorkKF:
 		if channelID == "" {
-			channelID = strs.UUID()
+			channelID = generateShortChannelID()
 		}
 		if exists := s.Take("channel_id = ? AND status <> ? AND id <> ?", channelID, enums.StatusDeleted, id); exists != nil {
 			return nil, errorsx.InvalidParamI18n("error.e0248")
@@ -735,7 +747,7 @@ func (s *channelService) buildChannelModel(id int64, req request.CreateChannelRe
 		}
 	case enums.ChannelTypeTelegram:
 		if channelID == "" {
-			channelID = strs.UUID()
+			channelID = generateShortChannelID()
 		}
 		if exists := s.Take("channel_id = ? AND status <> ? AND id <> ?", channelID, enums.StatusDeleted, id); exists != nil {
 			return nil, errorsx.InvalidParamI18n("error.e0248")
@@ -759,7 +771,7 @@ func (s *channelService) buildChannelModel(id int64, req request.CreateChannelRe
 		configJSON = string(configBytes)
 	case enums.ChannelTypeZaloOA:
 		if channelID == "" {
-			channelID = strs.UUID()
+			channelID = generateShortChannelID()
 		}
 		if exists := s.Take("channel_id = ? AND status <> ? AND id <> ?", channelID, enums.StatusDeleted, id); exists != nil {
 			return nil, errorsx.InvalidParamI18n("error.e0248")
@@ -778,7 +790,7 @@ func (s *channelService) buildChannelModel(id int64, req request.CreateChannelRe
 		configJSON = string(configBytes)
 	case enums.ChannelTypeSlack:
 		if channelID == "" {
-			channelID = strs.UUID()
+			channelID = generateShortChannelID()
 		}
 		if exists := s.Take("channel_id = ? AND status <> ? AND id <> ?", channelID, enums.StatusDeleted, id); exists != nil {
 			return nil, errorsx.InvalidParamI18n("error.e0248")
@@ -799,7 +811,7 @@ func (s *channelService) buildChannelModel(id int64, req request.CreateChannelRe
 		configJSON = string(configBytes)
 	case enums.ChannelTypeDiscord:
 		if channelID == "" {
-			channelID = strs.UUID()
+			channelID = generateShortChannelID()
 		}
 		if exists := s.Take("channel_id = ? AND status <> ? AND id <> ?", channelID, enums.StatusDeleted, id); exists != nil {
 			return nil, errorsx.InvalidParamI18n("error.e0248")
@@ -825,7 +837,7 @@ func (s *channelService) buildChannelModel(id int64, req request.CreateChannelRe
 		configJSON = string(configBytes)
 	case enums.ChannelTypeLark:
 		if channelID == "" {
-			channelID = strs.UUID()
+			channelID = generateShortChannelID()
 		}
 		if exists := s.Take("channel_id = ? AND status <> ? AND id <> ?", channelID, enums.StatusDeleted, id); exists != nil {
 			return nil, errorsx.InvalidParamI18n("error.e0248")
@@ -850,7 +862,7 @@ func (s *channelService) buildChannelModel(id int64, req request.CreateChannelRe
 
 	case enums.ChannelTypeEmail:
 		if channelID == "" {
-			channelID = strs.UUID()
+			channelID = generateShortChannelID()
 		}
 		if exists := s.Take("channel_id = ? AND status <> ? AND id <> ?", channelID, enums.StatusDeleted, id); exists != nil {
 			return nil, errorsx.InvalidParamI18n("error.e0248")

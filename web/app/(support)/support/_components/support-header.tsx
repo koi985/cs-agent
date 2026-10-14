@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 
 import { useSupportAuth } from "@/app/(support)/support/_components/support-auth-provider"
 import { SupportMobileMenu } from "@/app/(support)/support/_components/support-mobile-menu"
+import { SupportChatEntryButton } from "@/app/(support)/support/_components/support-chat-entry"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { buttonVariants } from "@/components/ui/button"
@@ -135,6 +136,7 @@ export function SupportHeader({
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-1 sm:ml-4">
+          <SupportChatEntryButton className="hidden sm:inline-flex" />
           <SupportAccountControl />
           <ThemeToggle
             variant="ghost"

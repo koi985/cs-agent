@@ -286,6 +286,8 @@
     "password": "Password",
     "passwordPlaceholder": "Enter your password",
     "forgotPassword": "Forgot your password?",
+    "forgotPasswordDialogTitle": "Reset password",
+    "forgotPasswordDialogDescription": "Please contact your system administrator to reset your password.",
     "signingIn": "Signing in...",
     "signIn": "Login",
     "continueWith": "Or continue with",
@@ -294,6 +296,8 @@
     "redirectingToOidc": "Redirecting to DOS ID...",
     "noAccount": "Don't have an account?",
     "signUp": "Sign up",
+    "toCustomerAuth": "Go to visitor registration / sign-in",
+    "visitorChat": "Visitor chat",
     "termsPrefix": "By clicking continue, you agree to our",
     "termsOfService": "Terms of Service",
     "termsJoiner": "and",
@@ -2840,6 +2844,14 @@
   },
   "supportPublic": {
     "brand": "Customer Service Agent Support",
+    "chatEntry": {
+      "label": "Live support",
+      "dialogTitle": "Open live support",
+      "dialogDescription": "Enter a channel ID to open that channel's support conversation.",
+      "channelIdLabel": "Channel ID",
+      "channelIdPlaceholder": "e.g. 3fpduvtw",
+      "enter": "Enter"
+    },
     "nav": {
       "home": "Home",
       "help": "Help",
@@ -3163,7 +3175,9 @@
   "workspace": {
     "dashboard": "Admin Dashboard",
     "workbench": "Support Workbench",
-    "switchWorkspace": "Switch workspace"
+    "switchWorkspace": "Switch workspace",
+    "visitorChatTest": "Visitor chat (test)",
+    "visitorChatUnavailable": "No web channel is available; opened the demo page instead"
   },
   "theme": {
     "toggle": "Change theme",

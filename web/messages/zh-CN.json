@@ -286,6 +286,8 @@
     "password": "密码",
     "passwordPlaceholder": "请输入密码",
     "forgotPassword": "忘记密码？",
+    "forgotPasswordDialogTitle": "重置密码",
+    "forgotPasswordDialogDescription": "请联系系统管理员为你重置密码。",
     "signingIn": "登录中...",
     "signIn": "登录",
     "continueWith": "或继续使用",
@@ -294,6 +296,8 @@
     "redirectingToOidc": "正在跳转到 DOS ID...",
     "noAccount": "还没有账号？",
     "signUp": "注册",
+    "toCustomerAuth": "去访客注册 / 登录",
+    "visitorChat": "访客聊天",
     "termsPrefix": "点击继续即表示你同意我们的",
     "termsOfService": "服务条款",
     "termsJoiner": "和",
@@ -2839,6 +2843,14 @@
   },
   "supportPublic": {
     "brand": "客服Agent 支持中心",
+    "chatEntry": {
+      "label": "在线客服",
+      "dialogTitle": "进入在线客服",
+      "dialogDescription": "请输入渠道 ID（ChannelID）以进入对应渠道的客服会话。",
+      "channelIdLabel": "频道 ID",
+      "channelIdPlaceholder": "例如 3fpduvtw",
+      "enter": "进入"
+    },
     "nav": {
       "home": "首页",
       "help": "帮助",
@@ -3162,7 +3174,9 @@
   "workspace": {
     "dashboard": "管理后台",
     "workbench": "客服工作台",
-    "switchWorkspace": "切换工作区"
+    "switchWorkspace": "切换工作区",
+    "visitorChatTest": "访客聊天（测试）",
+    "visitorChatUnavailable": "当前没有可用的 Web 渠道，已打开演示页"
   },
   "theme": {
     "toggle": "切换主题",

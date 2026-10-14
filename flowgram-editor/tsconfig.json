@@ -1,6 +1,7 @@
 {
   "extends": "@flowgram.ai/ts-config/tsconfig.flow.path.json",
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "rootDir": "./src",
     "outDir": "./dist",
     "experimentalDecorators": true,

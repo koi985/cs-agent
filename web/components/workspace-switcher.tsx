@@ -1,11 +1,12 @@
 "use client"
 
-import { Building2Icon, CheckIcon, ChevronsUpDownIcon, LayoutDashboardIcon, WrenchIcon } from "lucide-react"
+import { Building2Icon, CheckIcon, ChevronsUpDownIcon, LayoutDashboardIcon, MessageSquareIcon, WrenchIcon } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState, type ReactElement } from "react"
 import { toast } from "sonner"
 
 import { useI18n } from "@/i18n/provider"
+import { fetchChannels, fetchSupportConfigAdmin } from "@/lib/api/admin"
 import { listMyOrganizations, switchOrganization, type OrganizationItem } from "@/lib/api/organization"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,33 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export type WorkspaceKey = "dashboard" | "workbench"
+
+// resolveVisitorChatUrl finds the current AI customer-service channel and
+// returns its public chat URL. It prefers the channel configured in the support
+// center, then falls back to the first enabled web channel (preferring one bound
+// to an AI agent). Returns null when no usable channel exists.
+async function resolveVisitorChatUrl(): Promise<string | null> {
+  try {
+    const config = await fetchSupportConfigAdmin()
+    const channelId = config?.aiCustomerService?.channelId?.trim()
+    if (config?.aiCustomerService?.enabled && channelId) {
+      return `/support/chat?channelId=${encodeURIComponent(channelId)}`
+    }
+  } catch {
+    // fall through to channel discovery
+  }
+  try {
+    const page = await fetchChannels({ channelType: "web", status: 0 })
+    const list = page?.results ?? []
+    const chosen = list.find((item) => item.aiAgentId > 0) ?? list[0]
+    if (chosen?.channelId) {
+      return `/support/chat?channelId=${encodeURIComponent(chosen.channelId)}`
+    }
+  } catch {
+    // ignore and fall back to null
+  }
+  return null
+}
 
 export type WorkspaceOption = {
   key: WorkspaceKey
@@ -80,8 +108,17 @@ export function WorkspaceSwitcher({
     workspaceOptions.find((item) => item.key === currentWorkspace) ?? workspaceOptions[0]
   const currentOrg = orgs.find((o) => o.id === activeOrgId) || orgs[0]
 
-  const handleSwitchOrg = async (orgId: number) => {
-    if (orgId === activeOrgId || switching) return
+  const openVisitorChat = async () => {
+    const target = await resolveVisitorChatUrl()
+    if (target) {
+      window.open(target, "_blank", "noopener,noreferrer")
+      return
+    }
+    toast.error(t("workspace.visitorChatUnavailable"))
+    window.open("/support/demo", "_blank", "noopener,noreferrer")
+  }
+
+  const handleSwitchOrg = async (orgId: number) => {    if (orgId === activeOrgId || switching) return
     setSwitching(true)
     try {
       await switchOrganization(orgId)
@@ -208,6 +245,19 @@ export function WorkspaceSwitcher({
               ) : null}
             </DropdownMenuItem>
           ))}
+        </DropdownMenuGroup>
+
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            className="cursor-pointer gap-2"
+            onClick={() => {
+              void openVisitorChat()
+            }}
+          >
+            <MessageSquareIcon className="size-4 text-muted-foreground" />
+            <span className="flex-1 truncate">{t("workspace.visitorChatTest")}</span>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
