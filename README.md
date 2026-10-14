@@ -182,59 +182,149 @@ task --list         # 查看可用任务
 
 ## AI Agent 工作流
 
+本节还原 AI 客服的真实运行链路：从多渠道接入，到知识检索与「可回答性闸门（Answerability Gate）」，再到受策略约束的工具循环与结构化决策，最终落到回复、转人工或建单，并全程留痕审计。
+
+### 1. 端到端总览
+
+```mermaid
+flowchart TB
+    subgraph 接入
+        W[Web 聊天页]
+        G[嵌入式 Widget / SDK]
+        O[Open API]
+        C[多渠道：企微 / Telegram / Slack / Discord / 飞书 / 邮件]
+    end
+    subgraph 会话
+        S1[创建或匹配会话]
+        S2[识别并关联客户]
+    end
+    subgraph 运行时[AI 运行时]
+        R1[加载 AI 配置与发布快照]
+        R2[知识库混合检索]
+        R3{可回答性闸门 Answerability Gate}
+        R4[工具循环：LLM 与 Tools]
+        R5{结构化决策 conversation_decision}
+    end
+    subgraph 结果与协作
+        E1[AI 回复用户]
+        E2[转人工与人工接管]
+        E3[创建或关联工单]
+    end
+    subgraph 审计
+        A1[Agent Run 运行记录]
+        A2[知识检索日志]
+        A3[工具调用与步骤]
+    end
+
+    W --> S1
+    G --> S1
+    O --> S1
+    C --> S1
+    S1 --> S2 --> R1 --> R2 --> R3
+    R3 -- 证据充分或未绑定知识库 --> R4
+    R3 -- 检索失败或缺乏证据 --> FB[兜底：按兜底模式回复或建议人工]
+    FB --> E2
+    R4 --> R5
+    R5 -- reply --> E1
+    R5 -- handoff --> E2
+    R5 -- 建单 --> E3
+    E2 --> E3
+    R2 -.-> A2
+    R4 -.-> A3
+    R5 -.-> A1
+```
+
+### 2. AI 决策循环（运行时细节）
+
 ```mermaid
 flowchart TD
-    A[用户发起咨询<br/>Web 客服入口 / Open API] --> B[创建或匹配会话]
-    B --> C[客户发送消息]
-    C --> D[触发 AI Reply Runtime]
-    D --> E[加载会话历史 / AI 配置]
-    E --> F[按绑定知识库执行检索]
-    F --> G{知识片段是否足以回答?}
-    G -- 否 --> Z[返回知识库兜底提示<br/>并建议联系人工客服]
-    G -- 是 --> H[准备 Skills / MCP Tools]
-    H --> I[将可信知识上下文交给 Agent]
-    I --> J{直接回复?}
-    J -- 是 --> K[LLM 基于知识生成回复并返回用户]
-    J -- 否 --> N{是否调用 Graph / MCP Tool?}
-    N -- 是 --> O[执行 Skill / Graph / MCP Tool]
-    O --> P{需要用户确认?}
-    P -- 否 --> I
-    P -- 是 --> Q[向用户发起确认]
-    Q --> R{用户确认结果}
-    R -- 确认转人工 --> S[会话转人工并进入待接入池]
-    S --> T[自动分配或人工分配]
-    T --> U[客服工作台接管]
-    U --> V{是否需要工单跟踪?}
-    V -- 是 --> W[创建或关联工单]
-    V -- 否 --> X[人工继续处理]
-    W --> X
-    X --> Y[问题解决并关闭]
-    R -- 确认建单 --> AA[从当前会话创建工单]
-    AA --> I
-    R -- 取消 --> K
-    N -- 否 --> K
+    IN[客户消息与会话历史] --> P[组装系统提示：能力目录]
+    P --> L[LLM 推理]
+    L --> Q{模型下一步}
+    Q -- tool_search --> TSS[按 code 解析能力]
+    Q -- conversation_decision --> D[结构化决策]
+    Q -- 直接回答 --> OUT[生成回复文本]
+
+    subgraph CAP[能力执行]
+        TS1[激活 Skill：返回本轮指令]
+        TS2[执行 Workflow]
+        TS3[内置工具：会话上下文 / 知识再检索 / 请求研判 / 会话分析 / 工单草稿]
+        TS4[MCP 工具：按风险级 read / write]
+    end
+    TSS --> TS1
+    TSS --> TS2
+    TSS --> TS3
+    TSS --> TS4
+    TS4 --> CONF{需用户确认?}
+    CONF -- 是 --> ASK[向用户确认：中断]
+    ASK -- 确认 --> LOOP[回填结果]
+    ASK -- 取消 --> OUT
+    CONF -- 否 --> LOOP
+    TS1 --> LOOP
+    TS2 --> LOOP
+    TS3 --> LOOP
+    LOOP -->|受最大步数（默认 6，不超过 8）与工具策略约束| L
+
+    D --> J{action}
+    J -- reply --> OUT
+    J -- ask_handoff_confirmation --> CF[向用户发起转人工确认]
+    J -- handoff --> HF[请求转人工]
+    CF --> OUT
+    OUT --> SEND[发送 AI 消息]
 ```
+
+### 3. 能力清单
+
+| 类别 | code 形式 | 用途 | 约束 |
+| --- | --- | --- | --- |
+| 内置 Builtin | `builtin/conversation_context`、`builtin/knowledge_retrieve` | 读取当前会话与客户上下文；按需再次检索已绑定知识库 | 只读 |
+| 内置 Graph | `graph/triage_service_request`、`graph/analyze_conversation`、`graph/prepare_ticket_draft`、`graph/create_ticket_with_confirmation` | 服务请求研判、会话意图与风险分析、生成工单草稿（不落库）、确认后建单 | 草稿只读；建单需用户确认 |
+| Skill | `skill/{id}` | 激活技能，返回本轮执行指令 | 受 Agent 绑定与启用状态约束 |
+| Workflow | `workflow/{versionId}` | 执行已发布的 AI 工作流（节点图） | 受绑定与版本约束 |
+| MCP | `{serverCode}/{toolName}` | 通过 MCP 调用外部工具 | 按风险级 read / write，可要求用户确认 |
+
+> 说明：模型通过 `tool_search` 传入精确的能力 code 来调用上述能力；`conversation_decision` 只输出结构化决策（reply / handoff / ask_handoff_confirmation），真正的转人工、分配等动作由运行时执行，模型不得声称动作已成功。
 
 ## 业务闭环
 
+从 AI 首访到人工协作、再到工单跟踪与会话关闭的完整状态流转：
+
 ```mermaid
-flowchart LR
-    A[客户咨询] --> B[AI Agent 接待]
-    B --> C{知识库可回答?}
-    C -- 是 --> D[AI 基于可信知识回复]
-    C -- 否 --> E[兜底提示 / 建议人工]
-    D --> F{是否需要人工?}
-    E --> G[人工接管]
-    F -- 否 --> H[会话结束或沉淀数据]
-    F -- 是 --> G
-    G --> I[客服工作台处理]
-    I --> J{是否需要跟踪?}
-    J -- 是 --> K[创建 / 关联工单]
-    J -- 否 --> L[直接解决]
-    K --> M[工单流转与进展记录]
-    M --> N[处理完成]
-    L --> N
+stateDiagram-v2
+    [*] --> AI接待
+    AI接待 --> 可回答性判定: 知识检索 + Answerability Gate
+    可回答性判定 --> AI回复: 证据充分
+    可回答性判定 --> 兜底: 检索失败 / 缺乏证据
+    AI回复 --> 结束会话: 诉求已解决
+    兜底 --> AI回复: 引导补充后再次尝试
+    兜底 --> 转人工: 兜底模式=转人工
+    AI回复 --> 转人工: 用户明确要求人工
+    转人工 --> 待接入: 进入待接入池 / 默认客服组
+    转人工 --> AI接待: AI 持有并提醒人工
+    待接入 --> 人工接管: 自动或人工分配
+    人工接管 --> 工单处理: 需要跟踪
+    人工接管 --> 结束会话: 无需跟踪
+    工单处理 --> 结束会话: 处理完成
+    结束会话 --> [*]
 ```
+
+**兜底模式（fallbackMode）**
+
+| 模式 | 行为 |
+| --- | --- |
+| NoAnswer | 直接返回无答案兜底提示 |
+| SuggestRetry | 引导用户补充信息后重试 |
+| Handoff | 兜底并请求转人工 |
+
+**转人工模式（handoffMode）**
+
+| 模式 | 行为 |
+| --- | --- |
+| 待接入池 | 会话进入公共待接入池，等待分配 |
+| 默认客服组 | 会话进入指定默认客服组待接入 |
+| AI 持有并提醒 | AI 继续接待，同时提醒人工介入 |
+
+> 工单状态：待处理（pending）→ 处理中（in_progress）→ 已处理（done）；工单可由 AI 生成草稿、经用户确认后创建，也可由人工从会话创建或关联。
 
 ## Docker 镜像
 
